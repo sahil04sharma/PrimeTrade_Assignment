@@ -37,6 +37,9 @@ trading_bot/
    (System Generated is fine).
 4. Copy the **API Key** and **Secret Key**. Save the secret now — it is shown once.
 5. Optional: open the Futures demo UI and confirm you have a USDT demo balance.
+   If balance is **0**, use the **Faucet** in the Assets panel on
+   **https://demo.binance.com/en/futures** → select **USDT** → **Add Asset**
+   (credits ~1,000 USDT demo funds).
 
 ### 2. Install dependencies (Python 3.9+)
 

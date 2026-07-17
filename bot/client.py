@@ -22,6 +22,16 @@ logger = logging.getLogger("trading_bot")
 DEMO_FUTURES_BASE_URL = "https://demo-fapi.binance.com"
 
 
+def _format_api_number(value):
+    """Avoid scientific notation when sending floats to Binance."""
+    if isinstance(value, float):
+        text = format(value, "f")
+        if "." in text:
+            text = text.rstrip("0").rstrip(".")
+        return text
+    return value
+
+
 class BinanceClientError(Exception):
     """Raised when the Binance client cannot be initialized or a call fails unexpectedly."""
 
@@ -63,10 +73,10 @@ class BinanceFuturesTestnetClient:
             "symbol": symbol,
             "side": side,
             "type": order_type,
-            "quantity": quantity,
+            "quantity": _format_api_number(quantity),
         }
         if order_type == "LIMIT":
-            params["price"] = price
+            params["price"] = _format_api_number(price)
             params["timeInForce"] = "GTC"  # Good-Til-Canceled, required for LIMIT orders
 
         logger.info("Submitting order request: %s", params)

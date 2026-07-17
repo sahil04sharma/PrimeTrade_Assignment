@@ -41,9 +41,9 @@ class OrderResult:
             if avg_price is not None:
                 lines.append(f"  avgPrice     : {avg_price}")
             lines.append("")
-            lines.append("✅ SUCCESS: Order placed successfully.")
+            lines.append("SUCCESS: Order placed successfully.")
         else:
-            lines.append("❌ FAILURE: " + str(self.error))
+            lines.append("FAILURE: " + str(self.error))
 
         return "\n".join(lines)
 

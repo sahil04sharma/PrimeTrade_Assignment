@@ -9,12 +9,30 @@ Usage examples:
 import argparse
 import os
 import sys
+from pathlib import Path
 
 from bot.client import BinanceClientError, BinanceFuturesTestnetClient
 from bot.logging_config import setup_logger
 from bot.orders import submit_order
 
 logger = setup_logger()
+
+
+def load_env_file(path: str = ".env") -> None:
+    """Load KEY=VALUE pairs from a local .env file into os.environ."""
+    env_path = Path(__file__).resolve().parent / path
+    if not env_path.exists():
+        return
+
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -34,6 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main():
+    load_env_file()
     parser = build_parser()
     args = parser.parse_args()
 
@@ -44,7 +63,7 @@ def main():
         client = BinanceFuturesTestnetClient(api_key, api_secret)
     except BinanceClientError as exc:
         logger.error("Startup failed: %s", exc)
-        print(f"❌ FAILURE: {exc}")
+        print(f"FAILURE: {exc}")
         sys.exit(1)
 
     result = submit_order(
