@@ -1,0 +1,5 @@
+2026-07-17 06:59:23 | INFO     | trading_bot | Submitting order request: {'symbol': 'BTCUSDT', 'side': 'BUY', 'type': 'MARKET', 'quantity': 0.01, 'price': None}
+2026-07-17 06:59:23 | INFO     | trading_bot | Order response: {'orderId': 100001, 'symbol': 'BTCUSDT', 'status': 'FILLED', 'side': 'BUY', 'type': 'MARKET', 'executedQty': '0.01', 'avgPrice': '60123.50'}
+2026-07-17 06:59:23 | INFO     | trading_bot | Submitting order request: {'symbol': 'BTCUSDT', 'side': 'SELL', 'type': 'LIMIT', 'quantity': 0.01, 'price': 65000.0}
+2026-07-17 06:59:23 | INFO     | trading_bot | Order response: {'orderId': 100002, 'symbol': 'BTCUSDT', 'status': 'NEW', 'side': 'SELL', 'type': 'LIMIT', 'executedQty': '0', 'avgPrice': '65000.0'}
+2026-07-17 06:59:27 | ERROR    | trading_bot | Startup failed: API key and secret are required. Set BINANCE_TESTNET_API_KEY and BINANCE_TESTNET_API_SECRET environment variables.

@@ -1,8 +1,8 @@
 # Binance Futures Testnet Trading Bot
 
 A simplified CLI trading bot that places MARKET and LIMIT orders on Binance
-Futures Testnet (USDT-M), with structured code, input validation, and
-logging.
+Futures Testnet / Demo Trading (USDT-M), with structured code, input
+validation, and logging.
 
 ## Project Structure
 
@@ -20,35 +20,57 @@ trading_bot/
     trading_bot.log       # Generated at runtime
   README.md
   requirements.txt
+  .env.example
 ```
 
 ## Setup
 
-1. **Create a Futures Testnet account** at https://testnet.binancefuture.com
-   and generate an API key + secret from the site.
+### 1. Get Demo / Testnet API credentials
 
-2. **Install dependencies** (Python 3.9+):
-   ```bash
-   pip install -r requirements.txt
-   ```
+> **Note:** Binance migrated Futures Testnet off `testnet.binancefuture.com`
+> to **Demo Trading**. API base URL used by this bot:
+> `https://demo-fapi.binance.com` (via `python-binance` `Client(..., demo=True)`).
 
-3. **Set your API credentials** as environment variables:
-   ```bash
-   export BINANCE_TESTNET_API_KEY="your_key_here"
-   export BINANCE_TESTNET_API_SECRET="your_secret_here"
-   ```
-   (On Windows PowerShell: `$env:BINANCE_TESTNET_API_KEY="..."`)
+1. Open **https://demo.binance.com** (incognito is fine).
+2. Log in (GitHub login works; use the Demo Trading account, not live keys).
+3. Profile → **API Management** / **Demo Trading API** → **Create API**
+   (System Generated is fine).
+4. Copy the **API Key** and **Secret Key**. Save the secret now — it is shown once.
+5. Optional: open the Futures demo UI and confirm you have a USDT demo balance.
+
+### 2. Install dependencies (Python 3.9+)
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Set API credentials (environment variables — never hardcode)
+
+**Windows PowerShell (current session only):**
+```powershell
+$env:BINANCE_TESTNET_API_KEY="your_key_here"
+$env:BINANCE_TESTNET_API_SECRET="your_secret_here"
+```
+
+**macOS / Linux:**
+```bash
+export BINANCE_TESTNET_API_KEY="your_key_here"
+export BINANCE_TESTNET_API_SECRET="your_secret_here"
+```
+
+Or copy `.env.example` → `.env` and load it yourself; `.env` is gitignored.
 
 ## Usage
 
 ### Place a MARKET order
 ```bash
-python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01
+python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.001
 ```
 
 ### Place a LIMIT order
+(Use a price far from market so it rests as `NEW` and does not fill immediately.)
 ```bash
-python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.01 --price 65000
+python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.001 --price 150000
 ```
 
 ### Arguments
@@ -64,25 +86,24 @@ Every run prints an order request summary, the API response (orderId,
 status, executedQty, avgPrice), and a success/failure message. All requests,
 responses, and errors are also written to `logs/trading_bot.log`.
 
-## Demo mode (no API keys needed)
+## Dry-run demo (no API keys needed)
 
 `demo_dry_run.py` mocks the Binance client layer so you can see the full
-request → log → response → summary pipeline without valid testnet
-credentials:
+request → log → response → summary pipeline without credentials:
 
 ```bash
 python demo_dry_run.py
 ```
 
-This is what was used to generate the sample log entries included in this
-submission (`logs/trading_bot.log`) for one MARKET and one LIMIT order.
+For the submission, prefer real demo-API log lines (real `orderId` values)
+from running `cli.py` after setting credentials.
 
 ## Error handling
 
 - **Invalid input** (bad symbol format, non-numeric quantity/price, missing
   price on a LIMIT order, invalid side/type) is caught by `bot/validators.py`
   before any API call is made, and reported clearly without a stack trace.
-- **API errors** (e.g. insufficient testnet balance, invalid symbol on
+- **API errors** (e.g. insufficient demo balance, invalid symbol on
   Binance's side, bad precision) are caught around the `futures_create_order`
   call and surfaced as a clean failure message.
 - **Network failures** (timeouts, connection errors) are caught by the same
@@ -91,18 +112,20 @@ submission (`logs/trading_bot.log`) for one MARKET and one LIMIT order.
 
 ## Assumptions
 
+- Binance's current Futures "testnet" is Demo Trading at
+  `https://demo-fapi.binance.com` (the old `testnet.binancefuture.com` host
+  is deprecated). Env var names keep the `BINANCE_TESTNET_*` prefix from the
+  assignment for familiarity.
 - Orders use `timeInForce=GTC` for LIMIT orders (not exposed as a flag, to
   keep the CLI surface small per the "simplified" scope of this task).
 - Quantity/price precision (tick size, lot size) is left to Binance's own
-  validation on the testnet; the app does not pre-round to each symbol's
-  exchange filters.
+  validation; the app does not pre-round to each symbol's exchange filters.
 - Only USDT-M futures are targeted, per the task spec.
 - Credentials are read from environment variables rather than passed as CLI
-  flags, to avoid leaking secrets into shell history.
+  flags, to avoid leaking secrets into shell history / git.
 
 ## Bonus not implemented
 
 Given the ~60 minute scope, the bonus items (Stop-Limit/OCO/TWAP/Grid,
 richer interactive CLI UX, lightweight UI) were left out in favor of a
-clean, correct, well-tested core. Happy to discuss extending any of these
-in an interview.
+clean, correct core. Happy to discuss extending any of these in an interview.
