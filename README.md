@@ -18,6 +18,8 @@ trading_bot/
   demo_dry_run.py        # Mocked demo - no real API calls, no keys needed
   logs/
     trading_bot.log       # Generated at runtime
+  assets/
+    binance-demo-order-proof.png  # Demo wallet screenshot after orders
   README.md
   requirements.txt
   .env.example
@@ -121,6 +123,17 @@ python demo_dry_run.py
 For the submission, prefer real demo-API log lines (real `orderId` values)
 from running `cli.py` after setting credentials.
 
+## Proof of demo trading activity
+
+Orders placed by this bot are visible on the Binance **Demo Trading** Futures
+wallet (balance / positions change after MARKET fills). Screenshot from the
+demo dashboard after placing orders via `cli.py`:
+
+![Binance Demo Futures wallet after bot orders](assets/binance-demo-order-proof.png)
+
+Supporting API evidence is also in [`logs/trading_bot.log`](logs/trading_bot.log)
+(real `orderId` / `algoId` values for MARKET, LIMIT, and STOP_LIMIT).
+
 ## Error handling
 
 - **Invalid input** (bad symbol format, non-numeric quantity/price, missing
@@ -161,3 +174,5 @@ from running `cli.py` after setting credentials.
 
 Other optional bonuses (OCO/TWAP/Grid, lightweight UI) were left out to keep
 the submission focused.
+
+
