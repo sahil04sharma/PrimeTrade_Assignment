@@ -34,9 +34,13 @@ class OrderResult:
             lines.append("=" * 50)
             lines.append("ORDER RESPONSE")
             lines.append("=" * 50)
-            lines.append(f"  orderId      : {self.response.get('orderId')}")
-            lines.append(f"  status       : {self.response.get('status')}")
-            lines.append(f"  executedQty  : {self.response.get('executedQty')}")
+            # Algo/conditional orders return algoId / algoStatus instead of
+            # orderId / status; fall back so both regular and STOP_LIMIT work.
+            order_id = self.response.get("orderId", self.response.get("algoId"))
+            status = self.response.get("status", self.response.get("algoStatus"))
+            lines.append(f"  orderId      : {order_id}")
+            lines.append(f"  status       : {status}")
+            lines.append(f"  executedQty  : {self.response.get('executedQty', '0')}")
             avg_price = self.response.get("avgPrice")
             if avg_price is not None:
                 lines.append(f"  avgPrice     : {avg_price}")
@@ -55,6 +59,7 @@ def submit_order(
     order_type: str,
     quantity,
     price=None,
+    stop_price=None,
 ) -> OrderResult:
     """
     Validate inputs, submit the order via the client, and return an
@@ -63,7 +68,9 @@ def submit_order(
     so the CLI layer can decide how to present/exit.
     """
     try:
-        clean = validate_order_params(symbol, side, order_type, quantity, price)
+        clean = validate_order_params(
+            symbol, side, order_type, quantity, price, stop_price=stop_price
+        )
     except ValidationError as exc:
         logger.warning("Validation failed: %s", exc)
         return OrderResult(
@@ -74,6 +81,7 @@ def submit_order(
                 "order_type": order_type,
                 "quantity": quantity,
                 "price": price,
+                "stop_price": stop_price,
             },
             error=f"Invalid input - {exc}",
         )
@@ -85,6 +93,8 @@ def submit_order(
         "quantity": clean["quantity"],
         "price": clean["price"] if clean["price"] is not None else "N/A (market order)",
     }
+    if clean["order_type"] == "STOP_LIMIT":
+        request_summary["stop_price"] = clean["stop_price"]
 
     try:
         response = client.place_order(
@@ -93,6 +103,7 @@ def submit_order(
             order_type=clean["order_type"],
             quantity=clean["quantity"],
             price=clean["price"],
+            stop_price=clean["stop_price"],
         )
         return OrderResult(success=True, request=request_summary, response=response)
     except BinanceClientError as exc:

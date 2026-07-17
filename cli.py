@@ -2,8 +2,9 @@
 CLI entry point for the Binance Futures Testnet trading bot.
 
 Usage examples:
-    python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.01
-    python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.01 --price 60000
+    python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.001
+    python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.001 --price 150000
+    python cli.py --symbol BTCUSDT --side SELL --type STOP_LIMIT --quantity 0.001 --price 58000 --stop-price 59000
 """
 
 import argparse
@@ -37,17 +38,26 @@ def load_env_file(path: str = ".env") -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Place MARKET or LIMIT orders on Binance Futures Testnet (USDT-M)."
+        description="Place MARKET, LIMIT, or STOP_LIMIT orders on Binance Futures Demo (USDT-M)."
     )
     parser.add_argument("--symbol", required=True, help="Trading pair symbol, e.g. BTCUSDT")
     parser.add_argument("--side", required=True, choices=["BUY", "SELL", "buy", "sell"],
                          help="Order side")
-    parser.add_argument("--type", required=True, dest="order_type",
-                         choices=["MARKET", "LIMIT", "market", "limit"],
-                         help="Order type")
+    parser.add_argument(
+        "--type",
+        required=True,
+        dest="order_type",
+        choices=[
+            "MARKET", "LIMIT", "STOP_LIMIT",
+            "market", "limit", "stop_limit", "STOP-LIMIT", "stop-limit",
+        ],
+        help="Order type (MARKET, LIMIT, or STOP_LIMIT)",
+    )
     parser.add_argument("--quantity", required=True, help="Order quantity")
     parser.add_argument("--price", required=False, default=None,
-                         help="Limit price (required for LIMIT orders)")
+                         help="Limit price (required for LIMIT and STOP_LIMIT)")
+    parser.add_argument("--stop-price", required=False, default=None, dest="stop_price",
+                         help="Trigger/stop price (required for STOP_LIMIT)")
     return parser
 
 
@@ -73,6 +83,7 @@ def main():
         order_type=args.order_type,
         quantity=args.quantity,
         price=args.price,
+        stop_price=args.stop_price,
     )
 
     print(result.summary())

@@ -76,14 +76,23 @@ python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.001
 python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.001 --price 150000
 ```
 
+### Place a STOP_LIMIT order (bonus)
+Triggers a LIMIT sell when price hits `--stop-price`, then posts at `--price`.
+Use a stop price *below* the current market for a sell stop-limit so it rests
+without triggering immediately.
+```bash
+python cli.py --symbol BTCUSDT --side SELL --type STOP_LIMIT --quantity 0.001 --price 58000 --stop-price 59000
+```
+
 ### Arguments
 | Flag | Required | Notes |
 |---|---|---|
 | `--symbol` | yes | e.g. `BTCUSDT` |
 | `--side` | yes | `BUY` or `SELL` (case-insensitive) |
-| `--type` | yes | `MARKET` or `LIMIT` (case-insensitive) |
+| `--type` | yes | `MARKET`, `LIMIT`, or `STOP_LIMIT` |
 | `--quantity` | yes | must be > 0 |
-| `--price` | only for LIMIT | must be > 0 |
+| `--price` | LIMIT / STOP_LIMIT | must be > 0 |
+| `--stop-price` | STOP_LIMIT only | trigger price; must be > 0 |
 
 Every run prints an order request summary, the API response (orderId,
 status, executedQty, avgPrice), and a success/failure message. All requests,
@@ -119,16 +128,20 @@ from running `cli.py` after setting credentials.
   `https://demo-fapi.binance.com` (the old `testnet.binancefuture.com` host
   is deprecated). Env var names keep the `BINANCE_TESTNET_*` prefix from the
   assignment for familiarity.
-- Orders use `timeInForce=GTC` for LIMIT orders (not exposed as a flag, to
-  keep the CLI surface small per the "simplified" scope of this task).
+- Orders use `timeInForce=GTC` for LIMIT and STOP_LIMIT orders (not exposed
+  as a flag, to keep the CLI surface small).
+- CLI type `STOP_LIMIT` maps to Binance futures type `STOP`. Since Dec 2025,
+  conditional orders go through `POST /fapi/v1/algoOrder` (python-binance
+  handles this and maps `stopPrice` → `triggerPrice`). Response may use
+  `algoId` / `algoStatus` instead of `orderId` / `status`.
 - Quantity/price precision (tick size, lot size) is left to Binance's own
   validation; the app does not pre-round to each symbol's exchange filters.
 - Only USDT-M futures are targeted, per the task spec.
 - Credentials are read from environment variables rather than passed as CLI
   flags, to avoid leaking secrets into shell history / git.
 
-## Bonus not implemented
+## Bonus implemented
 
-Given the ~60 minute scope, the bonus items (Stop-Limit/OCO/TWAP/Grid,
-richer interactive CLI UX, lightweight UI) were left out in favor of a
-clean, correct core. Happy to discuss extending any of these in an interview.
+**Stop-Limit orders** (`--type STOP_LIMIT` with `--price` and `--stop-price`).
+Other optional bonuses (OCO/TWAP/Grid, richer interactive CLI, lightweight UI)
+were left out to keep the submission focused.

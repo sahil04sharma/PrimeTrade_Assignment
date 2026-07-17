@@ -63,22 +63,39 @@ class BinanceFuturesTestnetClient:
             logger.exception("Failed to initialize Binance client")
             raise BinanceClientError(f"Could not initialize Binance client: {exc}") from exc
 
-    def place_order(self, symbol: str, side: str, order_type: str, quantity: float, price=None):
+    def place_order(
+        self,
+        symbol: str,
+        side: str,
+        order_type: str,
+        quantity: float,
+        price=None,
+        stop_price=None,
+    ):
         """
-        Place a MARKET or LIMIT order on Futures Testnet.
+        Place a MARKET, LIMIT, or STOP_LIMIT order on Futures Demo Trading.
 
-        Returns the raw order response dict from Binance on success.
+        STOP_LIMIT is sent to Binance as type=STOP (stop-limit). Since Dec 2025,
+        python-binance routes STOP orders to POST /fapi/v1/algoOrder and maps
+        stopPrice -> triggerPrice automatically.
+
+        Returns the raw order/algo response dict from Binance on success.
         Raises BinanceClientError on any API, order, or network failure.
         """
+        # CLI/user-facing type STOP_LIMIT maps to Binance futures type STOP
+        binance_type = "STOP" if order_type == "STOP_LIMIT" else order_type
+
         params = {
             "symbol": symbol,
             "side": side,
-            "type": order_type,
+            "type": binance_type,
             "quantity": _format_api_number(quantity),
         }
-        if order_type == "LIMIT":
+        if binance_type in {"LIMIT", "STOP"}:
             params["price"] = _format_api_number(price)
-            params["timeInForce"] = "GTC"  # Good-Til-Canceled, required for LIMIT orders
+            params["timeInForce"] = "GTC"  # Good-Til-Canceled
+        if binance_type == "STOP":
+            params["stopPrice"] = _format_api_number(stop_price)
 
         logger.info("Submitting order request: %s", params)
 

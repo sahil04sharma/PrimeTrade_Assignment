@@ -14,8 +14,8 @@ class ValidationError(ValueError):
 
 
 VALID_SIDES = {"BUY", "SELL"}
-VALID_ORDER_TYPES = {"MARKET", "LIMIT"}
-# Loose symbol check: 6-20 uppercase letters/digits, e.g. BTCUSDT, ETHUSDT
+VALID_ORDER_TYPES = {"MARKET", "LIMIT", "STOP_LIMIT"}
+# Loose symbol check: 5-20 uppercase letters/digits, e.g. BTCUSDT, ETHUSDT
 SYMBOL_PATTERN = re.compile(r"^[A-Z0-9]{5,20}$")
 
 
@@ -41,8 +41,11 @@ def validate_side(side: str) -> str:
 
 def validate_order_type(order_type: str) -> str:
     if not order_type:
-        raise ValidationError("Order type is required (MARKET or LIMIT).")
-    order_type = order_type.strip().upper()
+        raise ValidationError("Order type is required (MARKET, LIMIT, or STOP_LIMIT).")
+    order_type = order_type.strip().upper().replace("-", "_")
+    # Accept common aliases for the stop-limit bonus type
+    if order_type in {"STOPLIMIT", "STOP"}:
+        order_type = "STOP_LIMIT"
     if order_type not in VALID_ORDER_TYPES:
         raise ValidationError(
             f"Order type must be one of {sorted(VALID_ORDER_TYPES)}, got '{order_type}'."
@@ -62,14 +65,15 @@ def validate_quantity(quantity) -> float:
 
 def validate_price(price, order_type: str):
     """
-    Price is required for LIMIT orders and must be > 0.
+    Price is required for LIMIT and STOP_LIMIT orders and must be > 0.
     For MARKET orders, price is ignored and returned as None.
     """
     if order_type == "MARKET":
         return None
 
+    label = "LIMIT" if order_type == "LIMIT" else "STOP_LIMIT"
     if price is None:
-        raise ValidationError("Price is required for LIMIT orders.")
+        raise ValidationError(f"Price is required for {label} orders.")
     try:
         price = float(price)
     except (TypeError, ValueError):
@@ -79,7 +83,26 @@ def validate_price(price, order_type: str):
     return price
 
 
-def validate_order_params(symbol: str, side: str, order_type: str, quantity, price=None):
+def validate_stop_price(stop_price, order_type: str):
+    """
+    Stop/trigger price is required for STOP_LIMIT orders and must be > 0.
+    For other order types it is ignored and returned as None.
+    """
+    if order_type != "STOP_LIMIT":
+        return None
+
+    if stop_price is None:
+        raise ValidationError("Stop price is required for STOP_LIMIT orders.")
+    try:
+        stop_price = float(stop_price)
+    except (TypeError, ValueError):
+        raise ValidationError(f"Stop price must be a number, got '{stop_price}'.")
+    if stop_price <= 0:
+        raise ValidationError("Stop price must be greater than 0.")
+    return stop_price
+
+
+def validate_order_params(symbol: str, side: str, order_type: str, quantity, price=None, stop_price=None):
     """
     Run all validations and return a clean, normalized dict of parameters.
     Raises ValidationError on the first failure encountered.
@@ -89,6 +112,7 @@ def validate_order_params(symbol: str, side: str, order_type: str, quantity, pri
     clean_type = validate_order_type(order_type)
     clean_quantity = validate_quantity(quantity)
     clean_price = validate_price(price, clean_type)
+    clean_stop_price = validate_stop_price(stop_price, clean_type)
 
     return {
         "symbol": clean_symbol,
@@ -96,4 +120,5 @@ def validate_order_params(symbol: str, side: str, order_type: str, quantity, pri
         "order_type": clean_type,
         "quantity": clean_quantity,
         "price": clean_price,
+        "stop_price": clean_stop_price,
     }
