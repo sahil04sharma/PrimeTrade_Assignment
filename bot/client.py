@@ -23,9 +23,10 @@ DEMO_FUTURES_BASE_URL = "https://demo-fapi.binance.com"
 
 
 def _format_api_number(value):
-    """Avoid scientific notation when sending floats to Binance."""
-    if isinstance(value, float):
-        text = format(value, "f")
+    """Format numbers for Binance without scientific notation or 6-decimal truncation."""
+    if isinstance(value, (int, float)):
+        # Default "f" truncates to 6 decimals; ".15f" matches float64 precision.
+        text = format(value, ".15f")
         if "." in text:
             text = text.rstrip("0").rstrip(".")
         return text
