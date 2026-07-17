@@ -1,8 +1,8 @@
 # Binance Futures Testnet Trading Bot
 
-A simplified CLI trading bot that places MARKET and LIMIT orders on Binance
-Futures Testnet / Demo Trading (USDT-M), with structured code, input
-validation, and logging.
+A simplified CLI trading bot that places MARKET, LIMIT, and STOP_LIMIT orders
+on Binance Futures Testnet / Demo Trading (USDT-M), with structured code,
+input validation, logging, and an optional interactive menu UX.
 
 ## Project Structure
 
@@ -65,12 +65,20 @@ Or copy `.env.example` → `.env` and load it yourself; `.env` is gitignored.
 
 ## Usage
 
-### Place a MARKET order
+### Interactive mode (enhanced CLI UX — bonus)
+Run with no flags for a menu, prompts, retry-on-error, and confirm-before-place:
+```bash
+python cli.py
+# or
+python cli.py --interactive
+```
+
+### Place a MARKET order (flag mode)
 ```bash
 python cli.py --symbol BTCUSDT --side BUY --type MARKET --quantity 0.001
 ```
 
-### Place a LIMIT order
+### Place a LIMIT order (flag mode)
 (Use a price far from market so it rests as `NEW` and does not fill immediately.)
 ```bash
 python cli.py --symbol BTCUSDT --side SELL --type LIMIT --quantity 0.001 --price 150000
@@ -84,15 +92,18 @@ without triggering immediately.
 python cli.py --symbol BTCUSDT --side SELL --type STOP_LIMIT --quantity 0.001 --price 58000 --stop-price 59000
 ```
 
-### Arguments
+### Arguments (flag mode)
 | Flag | Required | Notes |
 |---|---|---|
-| `--symbol` | yes | e.g. `BTCUSDT` |
-| `--side` | yes | `BUY` or `SELL` (case-insensitive) |
-| `--type` | yes | `MARKET`, `LIMIT`, or `STOP_LIMIT` |
-| `--quantity` | yes | must be > 0 |
+| `--symbol` | yes* | e.g. `BTCUSDT` |
+| `--side` | yes* | `BUY` or `SELL` (case-insensitive) |
+| `--type` | yes* | `MARKET`, `LIMIT`, or `STOP_LIMIT` |
+| `--quantity` | yes* | must be > 0 |
 | `--price` | LIMIT / STOP_LIMIT | must be > 0 |
 | `--stop-price` | STOP_LIMIT only | trigger price; must be > 0 |
+| `-i` / `--interactive` | no | force interactive menu |
+
+\*Required only in flag mode. Interactive mode prompts for these.
 
 Every run prints an order request summary, the API response (orderId,
 status, executedQty, avgPrice), and a success/failure message. All requests,
@@ -142,6 +153,11 @@ from running `cli.py` after setting credentials.
 
 ## Bonus implemented
 
-**Stop-Limit orders** (`--type STOP_LIMIT` with `--price` and `--stop-price`).
-Other optional bonuses (OCO/TWAP/Grid, richer interactive CLI, lightweight UI)
-were left out to keep the submission focused.
+1. **Stop-Limit orders** — `--type STOP_LIMIT` with `--price` and `--stop-price`
+   (routed via Binance Algo Order API).
+2. **Enhanced CLI UX** — run `python cli.py` for a menu, field-by-field prompts,
+   clear validation retries, order preview, and confirm-before-place. Flag mode
+   still works for scripting.
+
+Other optional bonuses (OCO/TWAP/Grid, lightweight UI) were left out to keep
+the submission focused.
